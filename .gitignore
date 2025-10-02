@@ -1,0 +1,9 @@
+echo "__pycache__/
+*.pyc
+.env
+.venv
+*.sqlite
+*.db
+.DS_Store
+__pypackages__/
+" > .gitignore
