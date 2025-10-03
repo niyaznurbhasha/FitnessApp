@@ -4,3 +4,5 @@ pydantic==2.9.2
 typing-extensions>=4.10.0
 SQLAlchemy==2.0.35
 openai
+pytest==8.4.2
+python-dotenv==1.0.0

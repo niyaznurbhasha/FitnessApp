@@ -53,6 +53,11 @@ class EditSummaryRequest(BaseModel):
 class MealHistoryResponse(BaseModel):
     history: List[Dict[str, Any]]
 
+@app.get("/health")
+def health():
+    """Health check endpoint for monitoring."""
+    return {"status": "healthy", "service": "fitness-app"}
+
 @app.post("/chat", response_model=ChatResponse)
 def chat(req: ChatRequest) -> ChatResponse:
     return orc.respond(req)

@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v5
+      with:
+        python-version: "3.11"
+    
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+    
+    - name: Run tests
+      run: pytest -q
+
+  smoke:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Wait for staging deployment
+      run: sleep 30
+    
+    - name: API health check
+      run: curl -sf "$STAGING_API_URL/health"
+      env:
+        STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+    
+    - name: API smoke test
+      run: |
+        curl -sf -H "content-type: application/json" \
+          -d '{"user_id":"u1","text":"I ate 1 lb 90% lean ground beef, 2 cups rice"}' \
+          "$STAGING_API_URL/chat" >/dev/null
+      env:
+        STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
