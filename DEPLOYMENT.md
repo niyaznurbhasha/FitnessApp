@@ -27,10 +27,11 @@
 ### 4. Frontend Deployment (Vercel)
 1. **Connect GitHub repo** to Vercel
 2. **Root Directory**: `frontend/`
-3. **Framework**: Next.js
+3. **Framework**: Other (React Native/Expo)
 4. **Auto-deploy**: On push
 5. **Environment Variables**:
    ```
+   EXPO_PUBLIC_API_BASE=https://your-staging-api-url.onrender.com
    NEXT_PUBLIC_API_BASE=https://your-staging-api-url.onrender.com
    PREVIEW_USER=admin
    PREVIEW_PASS=your_secure_password
@@ -80,6 +81,21 @@ curl -s https://your-staging-url.onrender.com/chat \
 2. Enter Basic Auth credentials
 3. Test nutrition logging workflow
 
+## 📱 iOS Development
+
+### Converting to Native iOS App:
+1. **Install Expo CLI**: `npm install -g @expo/cli`
+2. **Run locally**: `cd frontend && npm start`
+3. **iOS Simulator**: Press `i` in terminal or scan QR code with Expo Go app
+4. **Build for iOS**: `expo build:ios` (requires Apple Developer account)
+5. **EAS Build**: `npx eas build --platform ios` (recommended)
+
+### Key Benefits:
+- ✅ **Same codebase** for web and iOS
+- ✅ **Native performance** on mobile
+- ✅ **Easy deployment** to App Store
+- ✅ **Hot reload** during development
+
 ## 🔒 Security
 
 - **Frontend**: Basic Auth protection
@@ -94,7 +110,8 @@ curl -s https://your-staging-url.onrender.com/chat \
 - `APP_ENV` - `staging` or `production`
 
 ### Frontend (Vercel):
-- `NEXT_PUBLIC_API_BASE` - Backend API URL
+- `EXPO_PUBLIC_API_BASE` - Backend API URL (React Native)
+- `NEXT_PUBLIC_API_BASE` - Backend API URL (fallback)
 - `PREVIEW_USER` - Basic auth username
 - `PREVIEW_PASS` - Basic auth password
 

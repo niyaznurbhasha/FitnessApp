@@ -1,0 +1,36 @@
+export default {
+  expo: {
+    name: "Fitness App",
+    slug: "fitness-app-rn",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/icon.png",
+    userInterfaceStyle: "light",
+    splash: {
+      image: "./assets/splash.png",
+      resizeMode: "contain",
+      backgroundColor: "#ffffff"
+    },
+    assetBundlePatterns: [
+      "**/*"
+    ],
+    web: {
+      favicon: "./assets/favicon.png",
+      bundler: "metro"
+    },
+    ios: {
+      supportsTablet: true,
+      bundleIdentifier: "com.yourcompany.fitnessapp"
+    },
+    android: {
+      adaptiveIcon: {
+        foregroundImage: "./assets/adaptive-icon.png",
+        backgroundColor: "#ffffff"
+      },
+      package: "com.yourcompany.fitnessapp"
+    },
+    extra: {
+      apiBase: process.env.EXPO_PUBLIC_API_BASE || 'https://your-staging-api-url.onrender.com'
+    }
+  }
+};
