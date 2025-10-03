@@ -1,0 +1,11 @@
+{
+    "sqltools.useNodeRuntime": true,
+    "sqltools.connections": [
+        {
+            "previewLimit": 50,
+            "driver": "SQLite",
+            "name": "fitness_db",
+            "database": "/mnt/d/fitness_app/local.db"
+        }
+    ]
+}

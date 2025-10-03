@@ -1,0 +1,5 @@
+When proposing or running Python commands for this project:
+- Use `conda run -n fitness python ...` for every Python command.
+- Use `conda run -n fitness python -m pip install ...` for installs.
+- Do not create venvs or use `pip` without `python -m`.
+Env path: /home/yaz/miniconda3/envs/fitness
