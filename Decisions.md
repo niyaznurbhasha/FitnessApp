@@ -65,3 +65,36 @@ Testing strategy:
 - Golden test: 3 meals → finalize → check totals within tolerance
 - Edit flow test: post-hoc edit → re-finalize overwrites
 - All core functionality verified before database migration
+
+Step 4 – CI/CD Pipeline and React Native Frontend
+
+Problem: Need production deployment pipeline and mobile app for iOS.
+
+Solution: Complete CI/CD with React Native cross-platform frontend.
+
+Key decisions:
+- React Native/Expo instead of Next.js for iOS compatibility
+- Same codebase for web, iOS, and Android
+- GitHub Actions CI with smoke tests on every push
+- Render for backend (Docker), Vercel for frontend (React Native web)
+- Password protection for staging/preview deployments
+
+Implementation approach:
+- GitHub Actions: pytest + smoke tests on every push
+- Docker: Production-ready container with health checks
+- React Native: Cross-platform app with Expo
+- Deployment: Auto-deploy on push, manual iOS builds
+- Security: Environment variables, branch protection, Basic Auth
+
+Mobile development:
+- Expo Go for instant iPhone testing
+- iOS Simulator for development
+- EAS Build for App Store deployment
+- Hot reload during development
+- Native performance on mobile
+
+Deployment pipeline:
+- Backend: Render (Docker) with auto-deploy
+- Frontend: Vercel (React Native web) with auto-deploy
+- CI: GitHub Actions with smoke tests
+- Security: Branch protection, secrets management
