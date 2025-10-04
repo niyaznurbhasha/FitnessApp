@@ -10,7 +10,12 @@ Intent = Literal[
     "DEFAULT",
     "LOG_MEAL_FREEFORM",
     "INJURY_GUIDE",
-    "USUAL_WORKOUT_WITH_MODS"
+    "USUAL_WORKOUT_WITH_MODS",
+    "ASK_MEAL_INTENT",
+    "LOG_SINGLE_MEAL",
+    "LOG_WHOLE_DAY",
+    "PROCESS_MEAL_DATA",
+    "PROCESS_DAILY_SUMMARY"
 ]
 
 class Plan(BaseModel):
