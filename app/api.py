@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 from datetime import date
@@ -12,7 +13,27 @@ from app.schemas.nutrition import DayNutrition
 import os
 from dotenv import load_dotenv
 load_dotenv()  # this reads .env into os.environ
+
 app = FastAPI()
+
+# Add CORS middleware
+cors_origins = [
+    "http://localhost:3000",  # Local development
+    "http://localhost:19006",  # Expo web development
+    "http://localhost:8081",  # Expo development
+]
+
+# Add Vercel frontend URL if provided
+if os.environ.get("FRONTEND_URL"):
+    cors_origins.append(os.environ.get("FRONTEND_URL"))
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 init_db()
 
 # choose LLM: OpenAI if key present, else stub

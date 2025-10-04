@@ -26,6 +26,7 @@ You now have a complete CI/CD pipeline with React Native frontend ready for iOS 
    ```
    OPENAI_API_KEY=your_openai_api_key_here
    APP_ENV=staging
+   FRONTEND_URL=https://your-vercel-frontend-url.vercel.app
    ```
 5. **Click "Create Web Service"**
 6. **Wait for deployment** (5-10 minutes)
