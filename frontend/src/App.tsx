@@ -11,22 +11,39 @@ interface ChatResponse {
   tokens_out: number
 }
 
-export default function App() {
-  const [message, setMessage] = useState('')
-  const [response, setResponse] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [conversation, setConversation] = useState<Array<{type: 'user' | 'bot', text: string}>>([])
+interface LogEntry {
+  id: string
+  date: string
+  input: string
+  output: string
+  type: 'single_meal' | 'whole_day' | 'summary'
+}
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!message.trim()) return
-    
+type Screen = 'summary' | 'browse' | 'nutrient_logging' | 'chat'
+
+export default function App() {
+  const [currentScreen, setCurrentScreen] = useState<Screen>('summary')
+  const [message, setMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [logs, setLogs] = useState<LogEntry[]>([
+    {
+      id: '1',
+      date: '2024-10-04',
+      input: 'I had breakfast: 2 eggs scrambled with butter and toast',
+      output: 'Breakfast logged: 15g protein, 25g carbs, 12g fat, 280 kcal',
+      type: 'single_meal'
+    },
+    {
+      id: '2', 
+      date: '2024-10-03',
+      input: 'Today I had breakfast: eggs and toast, lunch: chicken salad, dinner: salmon',
+      output: 'Daily total: 85g protein, 120g carbs, 45g fat, 1,250 kcal',
+      type: 'whole_day'
+    }
+  ])
+
+  const handleSubmit = async (input: string, type: 'single_meal' | 'whole_day') => {
     setLoading(true)
-    const userMessage = message
-    setMessage('')
-    
-    // Add user message to conversation
-    setConversation(prev => [...prev, { type: 'user', text: userMessage }])
     
     try {
       const res = await fetch(`${API_BASE}/chat`, {
@@ -36,7 +53,7 @@ export default function App() {
         },
         body: JSON.stringify({
           user_id: 'demo_user',
-          text: userMessage
+          text: input
         }),
       })
       
@@ -45,128 +62,266 @@ export default function App() {
       }
       
       const data: ChatResponse = await res.json()
-      const botResponse = data.answer || 'No response received'
+      const response = data.answer || 'No response received'
       
-      // Add bot response to conversation
-      setConversation(prev => [...prev, { type: 'bot', text: botResponse }])
-      setResponse(botResponse)
+      // Add to logs
+      const newLog: LogEntry = {
+        id: Date.now().toString(),
+        date: new Date().toISOString().split('T')[0],
+        input,
+        output: response,
+        type
+      }
+      
+      setLogs(prev => [newLog, ...prev])
+      setCurrentScreen('summary')
     } catch (error) {
-      const errorMsg = `Error: ${error}`
-      setConversation(prev => [...prev, { type: 'bot', text: errorMsg }])
-      setResponse(errorMsg)
+      console.error('Error:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  const clearConversation = () => {
-    setConversation([])
-    setResponse('')
-  }
-
-  const quickActions = [
-    { label: 'Single Meal', text: 'I had breakfast: 2 eggs scrambled with butter and toast' },
-    { label: 'Whole Day', text: 'Today I had breakfast: eggs and toast, lunch: chicken salad, dinner: salmon' },
-    { label: 'Daily Summary', text: 'daily summary' },
-  ]
-
-  return (
-    <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-      <div style={{ background: '#007AFF', color: 'white', padding: '20px', borderRadius: '8px', marginBottom: '20px', textAlign: 'center' }}>
-        <h1 style={{ margin: 0, fontSize: '24px' }}>🍽️ Fitness App</h1>
-        <p style={{ margin: '4px 0 0 0', opacity: 0.8 }}>AI-Powered Nutrition Logging</p>
+  const renderSummary = () => (
+    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
+      <div style={{ background: '#8B4513', padding: '20px', marginBottom: '20px', borderRadius: '0 0 20px 20px' }}>
+        <h1 style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Summary</h1>
       </div>
-
-      {conversation.length === 0 && (
-        <div style={{ background: '#f0f0f0', padding: '15px', borderRadius: '8px', marginBottom: '20px' }}>
-          <h3 style={{ marginTop: 0 }}>Try these examples:</h3>
-          {quickActions.map((action, index) => (
-            <div key={index} style={{ background: 'white', padding: '12px', borderRadius: '8px', marginBottom: '8px', cursor: 'pointer' }} onClick={() => setMessage(action.text)}>
-              <div style={{ fontWeight: '600', color: '#007AFF', marginBottom: '4px' }}>{action.label}</div>
-              <div style={{ fontSize: '12px', color: '#666' }}>{action.text}</div>
-            </div>
-          ))}
-        </div>
-      )}
       
-      <div style={{ marginBottom: '20px', maxHeight: '400px', overflowY: 'auto' }}>
-        {conversation.map((msg, index) => (
-          <div key={index} style={{ marginBottom: '12px', display: 'flex', justifyContent: msg.type === 'user' ? 'flex-end' : 'flex-start' }}>
-            <div style={{
-              background: msg.type === 'user' ? '#007AFF' : 'white',
-              color: msg.type === 'user' ? 'white' : '#333',
-              padding: '12px',
-              borderRadius: '18px',
-              maxWidth: '85%',
-              border: msg.type === 'bot' ? '1px solid #e0e0e0' : 'none',
-              whiteSpace: 'pre-wrap'
-            }}>
-              {msg.text}
+      <div style={{ marginBottom: '20px' }}>
+        <h2 style={{ color: 'white', marginBottom: '15px' }}>Recent Activity</h2>
+        {logs.map((log) => (
+          <div key={log.id} style={{ 
+            background: '#2c2c2e', 
+            padding: '15px', 
+            borderRadius: '12px', 
+            marginBottom: '10px',
+            border: '1px solid #3a3a3c'
+          }}>
+            <div style={{ color: '#8e8e93', fontSize: '12px', marginBottom: '5px' }}>
+              {log.date} • {log.type === 'single_meal' ? 'Single Meal' : 'Whole Day'}
+            </div>
+            <div style={{ color: 'white', fontSize: '14px', marginBottom: '8px' }}>
+              {log.input}
+            </div>
+            <div style={{ color: '#8e8e93', fontSize: '12px' }}>
+              {log.output}
             </div>
           </div>
         ))}
-        
-        {loading && (
-          <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-            <div style={{ background: 'white', padding: '12px', borderRadius: '18px', border: '1px solid #e0e0e0', fontStyle: 'italic', color: '#666' }}>
-              Processing...
-            </div>
-          </div>
-        )}
       </div>
+    </div>
+  )
 
-      <form onSubmit={handleSubmit} style={{ background: 'white', padding: '16px', borderRadius: '8px', border: '1px solid #e0e0e0' }}>
-        <div style={{ marginBottom: '12px' }}>
-          <textarea
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Describe your meal or ask for a daily summary..."
-            style={{
-              width: '100%',
-              height: '100px',
-              padding: '12px',
-              border: '1px solid #ddd',
-              borderRadius: '8px',
-              fontSize: '16px',
-              resize: 'vertical',
-              boxSizing: 'border-box'
-            }}
-            required
-          />
+  const renderBrowse = () => (
+    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
+      <div style={{ background: '#8B4513', padding: '20px', marginBottom: '20px', borderRadius: '0 0 20px 20px' }}>
+        <h1 style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Browse</h1>
+      </div>
+      
+      <div>
+        <h2 style={{ color: 'white', marginBottom: '15px' }}>Health Categories</h2>
+        <div style={{ 
+          background: '#2c2c2e', 
+          padding: '15px', 
+          borderRadius: '12px', 
+          marginBottom: '10px',
+          border: '1px solid #3a3a3c',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between'
+        }} onClick={() => setCurrentScreen('nutrient_logging')}>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div style={{ 
+              width: '30px', 
+              height: '30px', 
+              background: '#34C759', 
+              borderRadius: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: '12px'
+            }}>
+              🍎
+            </div>
+            <span style={{ color: 'white', fontSize: '16px' }}>Nutrition</span>
+          </div>
+          <div style={{ color: '#8e8e93' }}>›</div>
         </div>
-        <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px' }}>
+      </div>
+    </div>
+  )
+
+  const renderNutrientLogging = () => (
+    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
+      <div style={{ background: '#8B4513', padding: '20px', marginBottom: '20px', borderRadius: '0 0 20px 20px' }}>
+        <h1 style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Nutrition</h1>
+      </div>
+      
+      <div style={{ textAlign: 'center', marginTop: '40px' }}>
+        <h2 style={{ color: 'white', marginBottom: '30px' }}>What would you like to log?</h2>
+        
+        <div style={{ marginBottom: '20px' }}>
           <button
-            type="button"
-            onClick={clearConversation}
+            onClick={() => setCurrentScreen('chat')}
             style={{
-              background: '#f0f0f0',
-              color: '#666',
-              border: '1px solid #ddd',
-              padding: '12px 24px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '500'
-            }}
-          >
-            Clear
-          </button>
-          <button
-            type="submit"
-            disabled={loading || !message.trim()}
-            style={{
-              background: loading || !message.trim() ? '#ccc' : '#007AFF',
+              background: '#007AFF',
               color: 'white',
               border: 'none',
-              padding: '12px 24px',
-              borderRadius: '8px',
-              cursor: loading || !message.trim() ? 'not-allowed' : 'pointer',
-              fontWeight: '600'
+              padding: '20px 40px',
+              borderRadius: '12px',
+              fontSize: '18px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              width: '100%',
+              marginBottom: '15px'
             }}
           >
-            {loading ? 'Sending...' : 'Send'}
+            Single Meal
+          </button>
+          
+          <button
+            onClick={() => setCurrentScreen('chat')}
+            style={{
+              background: '#007AFF',
+              color: 'white',
+              border: 'none',
+              padding: '20px 40px',
+              borderRadius: '12px',
+              fontSize: '18px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              width: '100%'
+            }}
+          >
+            Whole Day
           </button>
         </div>
-      </form>
+      </div>
+    </div>
+  )
+
+  const renderChat = () => (
+    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
+      <div style={{ background: '#8B4513', padding: '20px', marginBottom: '20px', borderRadius: '0 0 20px 20px' }}>
+        <h1 style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Nutrition Logging</h1>
+      </div>
+      
+      <div style={{ marginBottom: '20px' }}>
+        <textarea
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="Describe what you ate..."
+          style={{
+            width: '100%',
+            height: '120px',
+            padding: '15px',
+            border: '1px solid #3a3a3c',
+            borderRadius: '12px',
+            fontSize: '16px',
+            background: '#2c2c2e',
+            color: 'white',
+            resize: 'vertical',
+            boxSizing: 'border-box'
+          }}
+        />
+      </div>
+      
+      <div style={{ display: 'flex', gap: '10px' }}>
+        <button
+          onClick={() => setCurrentScreen('nutrient_logging')}
+          style={{
+            background: '#3a3a3c',
+            color: 'white',
+            border: 'none',
+            padding: '15px 20px',
+            borderRadius: '12px',
+            fontSize: '16px',
+            cursor: 'pointer',
+            flex: 1
+          }}
+        >
+          Back
+        </button>
+        
+        <button
+          onClick={() => handleSubmit(message, 'single_meal')}
+          disabled={loading || !message.trim()}
+          style={{
+            background: loading || !message.trim() ? '#3a3a3c' : '#007AFF',
+            color: 'white',
+            border: 'none',
+            padding: '15px 20px',
+            borderRadius: '12px',
+            fontSize: '16px',
+            cursor: loading || !message.trim() ? 'not-allowed' : 'pointer',
+            flex: 1
+          }}
+        >
+          {loading ? 'Processing...' : 'Submit'}
+        </button>
+      </div>
+    </div>
+  )
+
+  return (
+    <div style={{ fontFamily: 'Arial, sans-serif', background: '#1c1c1e', minHeight: '100vh' }}>
+      {currentScreen === 'summary' && renderSummary()}
+      {currentScreen === 'browse' && renderBrowse()}
+      {currentScreen === 'nutrient_logging' && renderNutrientLogging()}
+      {currentScreen === 'chat' && renderChat()}
+      
+      {/* Bottom Navigation */}
+      <div style={{
+        position: 'fixed',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        background: '#2c2c2e',
+        borderTop: '1px solid #3a3a3c',
+        display: 'flex',
+        justifyContent: 'space-around',
+        padding: '10px 0',
+        maxWidth: '400px',
+        margin: '0 auto'
+      }}>
+        <button
+          onClick={() => setCurrentScreen('summary')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: currentScreen === 'summary' ? '#007AFF' : '#8e8e93',
+            fontSize: '12px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <div style={{ fontSize: '20px' }}>❤️</div>
+          <span>Summary</span>
+        </button>
+        
+        <button
+          onClick={() => setCurrentScreen('browse')}
+          style={{
+            background: 'none',
+            border: 'none',
+            color: currentScreen === 'browse' ? '#007AFF' : '#8e8e93',
+            fontSize: '12px',
+            cursor: 'pointer',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '4px'
+          }}
+        >
+          <div style={{ fontSize: '20px' }}>⊞</div>
+          <span>Browse</span>
+        </button>
+      </div>
     </div>
   )
 }
