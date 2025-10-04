@@ -93,8 +93,9 @@ export default function App() {
       setCurrentScreen('summary')
       setMessage('')
     } catch (error) {
-      console.error('Error:', error)
-      alert('Error processing your request. Please try again.')
+      console.error('Full error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      alert(`Error: ${errorMessage}. Check console for details.`)
     } finally {
       setLoading(false)
     }
