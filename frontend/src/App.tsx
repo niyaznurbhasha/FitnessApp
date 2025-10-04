@@ -22,6 +22,8 @@ interface LogEntry {
 type Screen = 'summary' | 'browse' | 'nutrient_logging' | 'chat'
 
 export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [password, setPassword] = useState('')
   const [currentScreen, setCurrentScreen] = useState<Screen>('summary')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
@@ -41,6 +43,15 @@ export default function App() {
       type: 'whole_day'
     }
   ])
+
+  const handleLogin = () => {
+    const correctPassword = import.meta.env.VITE_APP_PASSWORD || 'localtestpass'
+    if (password === correctPassword) {
+      setIsAuthenticated(true)
+    } else {
+      alert('Incorrect password')
+    }
+  }
 
   const handleSubmit = async (input: string, type: 'single_meal' | 'whole_day') => {
     setLoading(true)
@@ -264,6 +275,70 @@ export default function App() {
       </div>
     </div>
   )
+
+  if (!isAuthenticated) {
+    return (
+      <div style={{ 
+        fontFamily: 'Arial, sans-serif', 
+        background: '#1c1c1e', 
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '20px'
+      }}>
+        <div style={{ 
+          background: '#2c2c2e', 
+          padding: '40px', 
+          borderRadius: '20px',
+          border: '1px solid #3a3a3c',
+          maxWidth: '400px',
+          width: '100%'
+        }}>
+          <h1 style={{ color: 'white', textAlign: 'center', marginBottom: '30px' }}>
+            🔒 Fitness App
+          </h1>
+          <p style={{ color: '#8e8e93', textAlign: 'center', marginBottom: '30px' }}>
+            Enter password to access
+          </p>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Password"
+            style={{
+              width: '100%',
+              padding: '15px',
+              border: '1px solid #3a3a3c',
+              borderRadius: '12px',
+              fontSize: '16px',
+              background: '#1c1c1e',
+              color: 'white',
+              marginBottom: '20px',
+              boxSizing: 'border-box'
+            }}
+            onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
+          />
+          <button
+            onClick={handleLogin}
+            style={{
+              width: '100%',
+              background: '#007AFF',
+              color: 'white',
+              border: 'none',
+              padding: '15px',
+              borderRadius: '12px',
+              fontSize: '16px',
+              fontWeight: '600',
+              cursor: 'pointer'
+            }}
+          >
+            Access App
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div style={{ fontFamily: 'Arial, sans-serif', background: '#1c1c1e', minHeight: '100vh' }}>
