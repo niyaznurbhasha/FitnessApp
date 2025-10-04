@@ -43,17 +43,15 @@ You now have a complete CI/CD pipeline with React Native frontend ready for iOS 
 
 ### **Step 2.2: Configure Frontend Deployment**
 1. **Project Settings**:
-   - **Framework Preset**: `Other`
+   - **Framework Preset**: `Vite`
    - **Root Directory**: `frontend`
-   - **Build Command**: `npm install && npm run build:web`
+   - **Build Command**: (leave empty - Vite handles it)
    - **Output Directory**: `dist`
-   - **Install Command**: `npm install`
+   - **Install Command**: (leave empty)
 2. **Environment Variables**:
    ```
-   EXPO_PUBLIC_API_BASE=https://your-render-backend-url.onrender.com
-   NEXT_PUBLIC_API_BASE=https://your-render-backend-url.onrender.com
-   PREVIEW_USER=admin
-   PREVIEW_PASS=your_secure_password_here
+   VITE_API_BASE=https://your-render-backend-url.onrender.com
+   VITE_APP_PASSWORD=your_secure_password_here
    ```
 3. **Deploy**
 4. **Note the URL**: `https://fitness-app-frontend-abc123.vercel.app`
@@ -68,8 +66,6 @@ You now have a complete CI/CD pipeline with React Native frontend ready for iOS 
 
 ```
 STAGING_API_URL=https://your-render-backend-url.onrender.com
-PREVIEW_USER=admin
-PREVIEW_PASS=your_secure_password_here
 ```
 
 ### **Step 3.2: Enable Branch Protection**

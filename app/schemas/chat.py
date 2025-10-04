@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional, Literal
 class ChatRequest(BaseModel):
     user_id: str
     text: str
+    meal_type: Optional[str] = None  # "single_meal" or "whole_day"
 
 # Intent enum as Literal for simplicity
 Intent = Literal[

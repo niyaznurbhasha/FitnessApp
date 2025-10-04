@@ -63,7 +63,8 @@ export default function App() {
         },
         body: JSON.stringify({
           user_id: 'demo_user',
-          text: input
+          text: input,
+          meal_type: type
         }),
       })
       

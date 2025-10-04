@@ -89,7 +89,17 @@ class Orchestrator:
 
     def respond(self, req: ChatRequest) -> ChatResponse:
         trace_id = str(uuid.uuid4())
-        p = plan(req.text)
+        
+        # Use meal_type if provided, otherwise detect intent
+        if req.meal_type:
+            if req.meal_type == "single_meal":
+                p = Plan(intent="PROCESS_MEAL_DATA", need_stm=True, need_ltm=False, tools=["meal_batching"], need_retrieval=False)
+            elif req.meal_type == "whole_day":
+                p = Plan(intent="PROCESS_MEAL_DATA", need_stm=True, need_ltm=False, tools=["nutrition"], need_retrieval=False)
+            else:
+                p = plan(req.text)
+        else:
+            p = plan(req.text)
 
         # log user turn (STM + DB)
         stm.add_turn(req.user_id, "user", req.text)
@@ -161,14 +171,8 @@ class Orchestrator:
 
         # -------- Process meal data --------
         elif p.intent == "PROCESS_MEAL_DATA":
-            # Check if this looks like a single meal or whole day
-            ql = req.text.lower()
-            whole_day_indicators = [
-                "today i had", "breakfast:", "lunch:", "dinner:", "snack:",
-                "for breakfast", "for lunch", "for dinner", "and then", "also had"
-            ]
-            
-            is_whole_day = any(indicator in ql for indicator in whole_day_indicators)
+            # Use meal_type from request instead of trying to detect
+            is_whole_day = req.meal_type == "whole_day"
             
             if is_whole_day:
                 # Process as whole day (single LLM call)
