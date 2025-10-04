@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 
 const API_BASE = import.meta.env.VITE_API_BASE || 'https://fitnessapp-yynz.onrender.com'
 
@@ -17,6 +17,13 @@ interface LogEntry {
   input: string
   output: string
   type: 'single_meal' | 'whole_day' | 'summary'
+  isFinalMeal?: boolean
+  macros?: {
+    protein: number
+    carbs: number
+    fat: number
+    calories: number
+  }
 }
 
 type Screen = 'summary' | 'browse' | 'nutrient_logging' | 'chat'
@@ -27,22 +34,9 @@ export default function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('summary')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(false)
-  const [logs, setLogs] = useState<LogEntry[]>([
-    {
-      id: '1',
-      date: '2024-10-04',
-      input: 'I had breakfast: 2 eggs scrambled with butter and toast',
-      output: 'Breakfast logged: 15g protein, 25g carbs, 12g fat, 280 kcal',
-      type: 'single_meal'
-    },
-    {
-      id: '2', 
-      date: '2024-10-03',
-      input: 'Today I had breakfast: eggs and toast, lunch: chicken salad, dinner: salmon',
-      output: 'Daily total: 85g protein, 120g carbs, 45g fat, 1,250 kcal',
-      type: 'whole_day'
-    }
-  ])
+  const [apiCallsUsed, setApiCallsUsed] = useState(0)
+  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [currentMealType, setCurrentMealType] = useState<'single_meal' | 'whole_day'>('single_meal')
 
   const handleLogin = () => {
     const correctPassword = import.meta.env.VITE_APP_PASSWORD || 'localtestpass'
@@ -54,6 +48,11 @@ export default function App() {
   }
 
   const handleSubmit = async (input: string, type: 'single_meal' | 'whole_day') => {
+    if (apiCallsUsed >= 10) {
+      alert('Maximum API calls reached for this session (10). Please refresh the browser to reset.')
+      return
+    }
+
     setLoading(true)
     
     try {
@@ -75,54 +74,133 @@ export default function App() {
       const data: ChatResponse = await res.json()
       const response = data.answer || 'No response received'
       
+      // Check if this is a final meal
+      const isFinalMeal = input.toLowerCase().includes('final meal') || type === 'whole_day'
+      
       // Add to logs
       const newLog: LogEntry = {
         id: Date.now().toString(),
         date: new Date().toISOString().split('T')[0],
         input,
         output: response,
-        type
+        type,
+        isFinalMeal
       }
       
       setLogs(prev => [newLog, ...prev])
+      setApiCallsUsed(prev => prev + 1)
       setCurrentScreen('summary')
+      setMessage('')
     } catch (error) {
       console.error('Error:', error)
+      alert('Error processing your request. Please try again.')
     } finally {
       setLoading(false)
     }
   }
 
-  const renderSummary = () => (
-    <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
-      <div style={{ background: '#8B4513', padding: '20px', marginBottom: '20px', borderRadius: '0 0 20px 20px' }}>
-        <h1 style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Summary</h1>
-      </div>
-      
-      <div style={{ marginBottom: '20px' }}>
-        <h2 style={{ color: 'white', marginBottom: '15px' }}>Recent Activity</h2>
-        {logs.map((log) => (
-          <div key={log.id} style={{ 
-            background: '#2c2c2e', 
-            padding: '15px', 
-            borderRadius: '12px', 
-            marginBottom: '10px',
-            border: '1px solid #3a3a3c'
-          }}>
-            <div style={{ color: '#8e8e93', fontSize: '12px', marginBottom: '5px' }}>
-              {log.date} • {log.type === 'single_meal' ? 'Single Meal' : 'Whole Day'}
-            </div>
-            <div style={{ color: 'white', fontSize: '14px', marginBottom: '8px' }}>
-              {log.input}
-            </div>
-            <div style={{ color: '#8e8e93', fontSize: '12px' }}>
-              {log.output}
-            </div>
+  const getTodaysLogs = () => {
+    const today = new Date().toISOString().split('T')[0]
+    return logs.filter(log => log.date === today)
+  }
+
+  const getTodaysDate = () => {
+    return new Date().toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })
+  }
+
+  const renderSummary = () => {
+    const todaysLogs = getTodaysLogs()
+    const hasFinalMeal = todaysLogs.some(log => log.isFinalMeal)
+    
+    return (
+      <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
+        <div style={{ background: '#8B4513', padding: '20px', marginBottom: '20px', borderRadius: '0 0 20px 20px' }}>
+          <h1 style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Summary</h1>
+        </div>
+        
+        <div style={{ marginBottom: '20px' }}>
+          <h2 style={{ color: 'white', marginBottom: '15px' }}>Today's Activity</h2>
+          <div style={{ color: '#8e8e93', fontSize: '14px', marginBottom: '20px' }}>
+            {getTodaysDate()}
           </div>
-        ))}
+          
+          {todaysLogs.length === 0 ? (
+            <div style={{ 
+              background: '#2c2c2e', 
+              padding: '20px', 
+              borderRadius: '12px', 
+              textAlign: 'center',
+              border: '1px solid #3a3a3c'
+            }}>
+              <div style={{ color: '#8e8e93', fontSize: '16px' }}>
+                No meals logged today
+              </div>
+              <div style={{ color: '#8e8e93', fontSize: '12px', marginTop: '8px' }}>
+                Go to Browse → Nutrition to log your first meal
+              </div>
+            </div>
+          ) : (
+            <>
+              {todaysLogs.map((log) => (
+                <div key={log.id} style={{ 
+                  background: '#2c2c2e', 
+                  padding: '15px', 
+                  borderRadius: '12px', 
+                  marginBottom: '10px',
+                  border: '1px solid #3a3a3c'
+                }}>
+                  <div style={{ color: '#8e8e93', fontSize: '12px', marginBottom: '5px' }}>
+                    {log.type === 'single_meal' ? 'Single Meal' : 'Whole Day'}
+                    {log.isFinalMeal && ' • Final Meal'}
+                  </div>
+                  <div style={{ color: 'white', fontSize: '14px', marginBottom: '8px' }}>
+                    {log.input}
+                  </div>
+                  <div style={{ color: '#8e8e93', fontSize: '12px' }}>
+                    {log.output}
+                  </div>
+                </div>
+              ))}
+              
+              {!hasFinalMeal && todaysLogs.some(log => log.type === 'single_meal') && (
+                <div style={{ 
+                  background: '#FF9500', 
+                  padding: '15px', 
+                  borderRadius: '12px', 
+                  marginTop: '10px',
+                  textAlign: 'center'
+                }}>
+                  <div style={{ color: 'white', fontSize: '14px', fontWeight: '600' }}>
+                    ⚠️ Incomplete Day
+                  </div>
+                  <div style={{ color: 'white', fontSize: '12px', marginTop: '5px' }}>
+                    Add "final meal" to your next entry to calculate daily totals
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        
+        <div style={{ 
+          background: '#2c2c2e', 
+          padding: '15px', 
+          borderRadius: '12px', 
+          border: '1px solid #3a3a3c',
+          textAlign: 'center'
+        }}>
+          <div style={{ color: '#8e8e93', fontSize: '12px' }}>
+            API Calls Used: {apiCallsUsed}/10
+          </div>
+        </div>
       </div>
-    </div>
-  )
+    )
+  }
 
   const renderBrowse = () => (
     <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
@@ -175,7 +253,10 @@ export default function App() {
         
         <div style={{ marginBottom: '20px' }}>
           <button
-            onClick={() => setCurrentScreen('chat')}
+            onClick={() => {
+              setCurrentMealType('single_meal')
+              setCurrentScreen('chat')
+            }}
             style={{
               background: '#007AFF',
               color: 'white',
@@ -193,7 +274,10 @@ export default function App() {
           </button>
           
           <button
-            onClick={() => setCurrentScreen('chat')}
+            onClick={() => {
+              setCurrentMealType('whole_day')
+              setCurrentScreen('chat')
+            }}
             style={{
               background: '#007AFF',
               color: 'white',
@@ -217,6 +301,9 @@ export default function App() {
     <div style={{ padding: '20px', maxWidth: '400px', margin: '0 auto', minHeight: '100vh', background: '#1c1c1e' }}>
       <div style={{ background: '#8B4513', padding: '20px', marginBottom: '20px', borderRadius: '0 0 20px 20px' }}>
         <h1 style={{ color: 'white', margin: 0, fontSize: '28px', fontWeight: 'bold' }}>Nutrition Logging</h1>
+        <div style={{ color: '#FFD700', fontSize: '12px', marginTop: '8px' }}>
+          {currentMealType === 'single_meal' ? '💡 Tip: Add "final meal" to your text to calculate daily totals' : 'Logging your whole day\'s nutrition'}
+        </div>
       </div>
       
       <div style={{ marginBottom: '20px' }}>
@@ -257,20 +344,20 @@ export default function App() {
         </button>
         
         <button
-          onClick={() => handleSubmit(message, 'single_meal')}
-          disabled={loading || !message.trim()}
+          onClick={() => handleSubmit(message, currentMealType)}
+          disabled={loading || !message.trim() || apiCallsUsed >= 10}
           style={{
-            background: loading || !message.trim() ? '#3a3a3c' : '#007AFF',
+            background: loading || !message.trim() || apiCallsUsed >= 10 ? '#3a3a3c' : '#007AFF',
             color: 'white',
             border: 'none',
             padding: '15px 20px',
             borderRadius: '12px',
             fontSize: '16px',
-            cursor: loading || !message.trim() ? 'not-allowed' : 'pointer',
+            cursor: loading || !message.trim() || apiCallsUsed >= 10 ? 'not-allowed' : 'pointer',
             flex: 1
           }}
         >
-          {loading ? 'Processing...' : 'Submit'}
+          {loading ? 'Processing...' : apiCallsUsed >= 10 ? 'Limit Reached' : 'Submit'}
         </button>
       </div>
     </div>
@@ -375,7 +462,7 @@ export default function App() {
             gap: '4px'
           }}
         >
-          <div style={{ fontSize: '20px' }}>❤️</div>
+          <div style={{ fontSize: '20px' }}>📊</div>
           <span>Summary</span>
         </button>
         
