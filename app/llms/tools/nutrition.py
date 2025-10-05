@@ -25,12 +25,15 @@ def parse_day_with_llm(
     messages = _build_messages(text, schema)
     out = llm.generate(messages)
     raw = out.get("content", "")
-    data = _safe_json_extract(raw)
+    
+    try:
+        data = _safe_json_extract(raw)
+    except Exception as e:
+        raise ValueError(f"Failed to parse LLM JSON response. Error: {str(e)}")
 
     try:
         day = DayNutrition.model_validate(data)
     except ValidationError as e:
-        # re-raise the original, don't wrap
         raise e
 
     warnings = _validate_consistency(day, require_exact_totals=require_exact_totals)
@@ -94,6 +97,7 @@ def _build_messages(user_text: str, schema: Dict[str, Any]) -> List[Dict[str, st
 def _safe_json_extract(s: str) -> Any:
     """
     Try direct JSON parse. If that fails, extract fenced code block or best-effort braces.
+    Also tries to fix common JSON errors like missing closing brackets.
     """
     s = s.strip()
     # direct
@@ -101,6 +105,24 @@ def _safe_json_extract(s: str) -> Any:
         return json.loads(s)
     except Exception:
         pass
+    
+    # Try to fix missing closing bracket for meals array
+    # Pattern: },"total_protein_g": should be }],"total_protein_g":
+    if '}",' in s and '"total_protein_g"' in s:
+        # Find the position right before "total_protein_g"
+        idx = s.find('"total_protein_g"')
+        if idx > 0:
+            # Check if there's a missing ] before the totals
+            before_totals = s[:idx]
+            if before_totals.count('[') > before_totals.count(']'):
+                # Add missing ]
+                fixed = s[:idx] + '],' + s[idx:]
+                fixed = fixed.replace('},],"total', '}],"total')  # Fix double comma
+                try:
+                    return json.loads(fixed)
+                except Exception:
+                    pass
+    
     # fenced ```json ... ```
     m = re.search(r"```json\s*(\{.*?\})\s*```", s, flags=re.S | re.I)
     if m:

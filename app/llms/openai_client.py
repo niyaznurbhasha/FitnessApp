@@ -20,6 +20,7 @@ class OpenAILLM:
         resp = self.client.chat.completions.create(
             model=self.model,
             messages=msgs,
+            max_completion_tokens=4000,  # Higher limit for complex nutrition responses with many items
         )
         choice = resp.choices[0].message
         content = choice.content or ""
