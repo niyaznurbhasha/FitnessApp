@@ -98,3 +98,52 @@ Deployment pipeline:
 - Frontend: Vercel (React Native web) with auto-deploy
 - CI: GitHub Actions with smoke tests
 - Security: Branch protection, secrets management
+
+Step 5 – Frontend Simplification and Production Deployment
+
+Problem: React Native/Expo had complex dependency conflicts on Vercel. Need simpler solution.
+
+Solution: Simplified to vanilla React + Vite, easier to convert to React Native later.
+
+Key decisions:
+- Switched from Expo to Vite for web deployment
+- Kept mobile-first UI design (ready for React Native conversion)
+- Removed intent detection - frontend explicitly sends meal_type
+- Session-based API call limiting (10 calls per browser session)
+
+Frontend features:
+- Today's Activity screen with date display
+- Single Meal vs Whole Day tracking
+- Final meal detection for daily totals calculation
+- API call counter to manage OpenAI costs
+- Password protection via environment variables
+
+Deployment fixes:
+- Removed conflicting vercel.json (use UI settings instead)
+- Set Root Directory to "frontend" in Vercel
+- Added CORS environment variable (FRONTEND_URL) to Render
+- Fixed intent validation errors in Pydantic schemas
+
+Step 6 – OpenAI Integration and JSON Parsing Robustness
+
+Problem: GPT-5-mini sometimes returns incomplete or malformed JSON for complex meals.
+
+Solution: Increased token limits and added JSON auto-repair logic.
+
+Key fixes:
+- Increased max_completion_tokens from default to 4000
+- Added JSON repair logic for missing closing brackets
+- Better error messages for debugging
+- Handles OpenAI API quirks (max_completion_tokens vs max_tokens)
+
+JSON auto-repair:
+- Detects missing ] before totals in meals array
+- Automatically fixes common malformed patterns
+- Validates bracket/brace counts
+- Graceful fallback to error messages if unrepairable
+
+Production lessons:
+- OpenAI models can return invalid JSON under token pressure
+- Always set explicit token limits for structured outputs
+- Build defensive parsing with auto-repair capabilities
+- Test with complex, real-world inputs (7+ items)
